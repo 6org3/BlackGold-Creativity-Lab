@@ -1,0 +1,47 @@
+services:
+  creativity-lab:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: blackgold-creativity-lab
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CREATIVITY_LAB_PUBLIC_URL: https://lab.blackgoldec.com
+      CREATIVITY_ASSET_QUOTA_BYTES: ${CREATIVITY_ASSET_QUOTA_BYTES:-10737418240}
+      CREATIVITY_ASSET_MIN_FREE_BYTES: ${CREATIVITY_ASSET_MIN_FREE_BYTES:-1073741824}
+    ports:
+      - "192.168.1.13:8791:3000"
+    volumes:
+      - /mnt/datos/content-worker:/content:ro
+      - /mnt/datos/creativity-lab/rclone:/rclone:ro
+      - /mnt/datos/creativity-lab/assets:/asset-store
+    networks:
+      - n8n
+    healthcheck:
+      test: ["CMD", "node", "-e", "const body=new URLSearchParams({user:process.env.CREATIVITY_LAB_USER,password:process.env.CREATIVITY_LAB_PASSWORD});fetch('http://127.0.0.1:3000/api/auth/login',{method:'POST',body,redirect:'manual'}).then(r=>{const cookie=r.headers.get('set-cookie')?.split(';')[0];if(!cookie)throw Error('login failed');return fetch('http://127.0.0.1:3000/api/system-os/health',{headers:{cookie}})}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 35s
+
+  drive-archivist:
+    image: rclone/rclone:1.75.0
+    container_name: blackgold-drive-archivist
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      RCLONE_CONFIG: /config/rclone/rclone.conf
+    entrypoint: ["/bin/sh", "/ops/archive-loop.sh"]
+    volumes:
+      - /mnt/datos/content-worker:/content:ro
+      - /mnt/datos/creativity-lab/rclone:/config/rclone
+      - /mnt/datos/creativity-lab/archive-state:/archive-state
+      - ./archive-loop.sh:/ops/archive-loop.sh:ro
+    networks:
+      - n8n
+
+networks:
+  n8n:
+    external: true
+    name: ${N8N_NETWORK:-blackgold-orchestration}
