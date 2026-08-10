@@ -8,7 +8,7 @@ function artifact(job, filename) {
   return filename ? `/api/system-os/artifacts/${job.job_id}/${encodeURIComponent(filename)}` : '';
 }
 
-export default function JobReviewPanel({ busy, job, onMutate }) {
+export default function JobReviewPanel({ busy, job, onManageAssets, onMutate }) {
   const [revision, setRevision] = useState('');
   if (!job) return null;
   const preview = artifact(job, job.preview_file || job.variants?.[0]?.file);
@@ -19,6 +19,7 @@ export default function JobReviewPanel({ busy, job, onMutate }) {
       {job.variants?.length > 0 && <div className="variant-list"><div className="rail-label"><span>Variantes</span><b>{job.selected_variant ? `${job.selected_variant} elegida` : 'Elige una'}</b></div><div>{job.variants.map((variant) => <button aria-label={`Elegir variante ${variant.key}`} className={job.selected_variant === variant.key ? 'is-selected' : ''} disabled={busy || job.state !== 'review'} key={variant.key} onClick={() => onMutate(job.job_id, { action: 'select_variant', variant: variant.key }, `Variante ${variant.key} seleccionada`)} type="button"><Image alt="" fill sizes="90px" src={artifact(job, variant.file)} unoptimized/><span>{variant.key}</span></button>)}</div></div>}
       {job.state === 'review' && <div className="review-actions"><button className="button-approval full" disabled={busy || (job.variants_requested > 1 && !job.selected_variant)} onClick={() => onMutate(job.job_id, { action: 'approve' }, 'Pieza aprobada; publicación aún pendiente')} type="button"><WorkflowIcon name="check" size={18}/>Aprobar pieza</button><label className="revision-field"><span>Pedir un cambio</span><textarea maxLength="500" onChange={(event) => setRevision(event.target.value)} placeholder="Mueve al jugador a la derecha…" rows="3" value={revision}/></label><button className="button-secondary full" disabled={busy || revision.trim().length < 3} onClick={() => { onMutate(job.job_id, { action: 'revise', instruction: revision }, 'Revisión enviada a Atlas'); setRevision(''); }} type="button">Crear revisión</button></div>}
       <dl className="job-meta"><div><dt>Estado</dt><dd>{job.state}</dd></div><div><dt>Workflow</dt><dd>{job.selected_workflow}</dd></div><div><dt>Entrega</dt><dd>{job.content_item_id ? 'Solo Lab' : 'Flujo anterior'}</dd></div></dl>
+      <button className="button-secondary full" onClick={onManageAssets} type="button"><WorkflowIcon name="files" size={17}/>Gestionar archivos y descartes</button>
     </section>
   );
 }

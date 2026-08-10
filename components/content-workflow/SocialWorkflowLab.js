@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import BrandMark from '../BrandMark';
 import ArchiveWorkspace from './ArchiveWorkspace';
+import AssetWorkspace from './AssetWorkspace';
 import ConfirmDialog from './ConfirmDialog';
 import ContentWizard from './ContentWizard';
 import ProductionWorkspace from './ProductionWorkspace';
@@ -14,6 +15,7 @@ import WorkflowIcon from './WorkflowIcon';
 const VIEWS = {
   plan: { label: 'Planificar', eyebrow: 'Dirección editorial', title: 'Social Media Workflow', icon: 'plan' },
   production: { label: 'Producción', eyebrow: 'Cola canónica', title: 'Producción social', icon: 'queue' },
+  assets: { label: 'Archivos', eyebrow: 'Biblioteca recuperable', title: 'Archivos del Lab', icon: 'files' },
   templates: { label: 'Plantillas', eyebrow: 'Playbooks Black Gold', title: 'Plantillas de contenido', icon: 'template' },
   archive: { label: 'Archivo', eyebrow: 'Historial recuperable', title: 'Archivo de contenido', icon: 'archive' },
 };
@@ -141,10 +143,10 @@ export default function SocialWorkflowLab() {
   return (
     <main className="lab-shell workflow-shell">
       <aside className="sidebar"><div className="brand-lockup"><div className="brand-mark"><BrandMark/></div><span><b>BLACK GOLD</b><small>Creativity Lab</small></span></div><nav aria-label="Navegación principal">{Object.entries(VIEWS).map(([id, entry]) => <button aria-current={view === id ? 'page' : undefined} className={`nav-item ${view === id ? 'is-active' : ''}`} key={id} onClick={() => navigate(id)} type="button"><WorkflowIcon name={entry.icon}/><span>{entry.label}</span>{id === 'production' && productionCount > 0 ? <em>{productionCount}</em> : id === 'archive' && archived.length > 0 ? <em>{archived.length}</em> : null}</button>)}</nav><div className="sidebar-foot"><span>Modo seguro</span><b>System OS · Local</b><small>Publicación manual</small><form action="/api/auth/logout" method="post"><button aria-label="Cerrar sesión" className="logout-button" type="submit"><WorkflowIcon name="logout" size={18}/><span>Cerrar sesión</span></button></form></div></aside>
-      <section className="workspace"><header className="topbar"><div><span className="eyebrow">{meta.eyebrow}</span><h1>{meta.title}</h1></div><div className="top-actions"><button aria-label="Actualizar workflow" className="icon-button" onClick={() => load(true)} type="button"><WorkflowIcon name="refresh"/></button>{view !== 'archive' && <button aria-label={view === 'templates' ? 'Nueva plantilla' : 'Nueva pieza'} className="button-primary" disabled={view !== 'templates' && !activeTemplates.length} onClick={() => view === 'templates' ? openTemplate() : openWizard()} type="button"><WorkflowIcon name="plus" size={18}/><span>{view === 'templates' ? 'Nueva plantilla' : 'Nueva pieza'}</span></button>}</div></header>
+      <section className="workspace"><header className="topbar"><div><span className="eyebrow">{meta.eyebrow}</span><h1>{meta.title}</h1></div><div className="top-actions"><button aria-label="Actualizar workflow" className="icon-button" onClick={() => load(true)} type="button"><WorkflowIcon name="refresh"/></button>{['plan', 'production', 'templates'].includes(view) && <button aria-label={view === 'templates' ? 'Nueva plantilla' : 'Nueva pieza'} className="button-primary" disabled={view !== 'templates' && !activeTemplates.length} onClick={() => view === 'templates' ? openTemplate() : openWizard()} type="button"><WorkflowIcon name="plus" size={18}/><span>{view === 'templates' ? 'Nueva plantilla' : 'Nueva pieza'}</span></button>}</div></header>
         <div className="safety-strip"><WorkflowIcon name="check" size={17}/><span>Planifica, produce y audita. <b>No publica, no envía mensajes y no abre inscripciones.</b></span></div>
         {message && <div className="notice" role="status"><span>{message}</span><button aria-label="Ocultar mensaje" onClick={() => setMessage('')} type="button"><WorkflowIcon name="close" size={16}/></button></div>}
-        <div className="workflow-view">{view === 'plan' && <StrategyPlanner items={items} onSelection={setSelection} onStart={openWizard} selection={selection} templates={activeTemplates}/>} {view === 'production' && <ProductionWorkspace busy={busy} health={health} items={items} jobs={jobs} onAction={itemAction} onChecklist={checklist} onEdit={(item) => openWizard({ item })} onJobMutate={jobMutate} templates={templates}/>} {view === 'templates' && <TemplateWorkspace busy={busy} onAction={templateAction} onEdit={openTemplate} templates={templates}/>} {view === 'archive' && <ArchiveWorkspace busy={busy} items={archived} onRestore={restoreItem}/>}</div>
+        <div className="workflow-view">{view === 'plan' && <StrategyPlanner items={items} onSelection={setSelection} onStart={openWizard} selection={selection} templates={activeTemplates}/>} {view === 'production' && <ProductionWorkspace busy={busy} health={health} items={items} jobs={jobs} onAction={itemAction} onChecklist={checklist} onEdit={(item) => openWizard({ item })} onJobMutate={jobMutate} onManageAssets={() => navigate('assets')} templates={templates}/>} {view === 'assets' && <AssetWorkspace items={items} jobs={jobs} onMessage={setMessage}/>} {view === 'templates' && <TemplateWorkspace busy={busy} onAction={templateAction} onEdit={openTemplate} templates={templates}/>} {view === 'archive' && <ArchiveWorkspace busy={busy} items={archived} onRestore={restoreItem}/>}</div>
       </section>
       {wizardOpen && <ContentWizard busy={busy} initial={wizardInitial} onClose={closeWizard} onSave={saveWizard} open templates={templates}/>}
       {templateOpen && <TemplateEditor busy={busy} initial={templateInitial} onClose={closeTemplate} onSave={saveTemplate} open/>}

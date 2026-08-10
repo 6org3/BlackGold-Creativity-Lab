@@ -66,7 +66,7 @@ function StrategyMatrix({ objective, pillar, onChange }) {
 export default function StrategyPlanner({ items, templates, selection, onSelection, onStart }) {
   const strategy = strategyFor(selection.objective, selection.pillar);
   const recommended = useMemo(() => sortTemplates(templates, selection.objective, selection.pillar).slice(0, 4), [selection, templates]);
-  const drafts = items.filter((item) => item.stage === 'draft').slice(0, 4);
+  const drafts = items.filter((item) => item.stage === 'draft');
 
   return (
     <div className="planner-layout">
@@ -82,7 +82,7 @@ export default function StrategyPlanner({ items, templates, selection, onSelecti
 
       <aside className="planner-side">
         <section><header><span className="eyebrow">Recomendadas</span><h2>Plantillas listas</h2></header><div className="recommendation-list">{recommended.map((template, index) => <button key={template.template_id} onClick={() => onStart({ ...selection, templateId: template.template_id })} type="button"><span>{String(index + 1).padStart(2, '0')}</span><span><b>{template.name}</b><small>{template.execution_mode === 'image_auto' ? 'Render local disponible' : 'Plan y checklist'}</small></span><WorkflowIcon name="chevron" size={16}/></button>)}</div></section>
-        <section><header><span className="eyebrow">Continuar</span><h2>Borradores</h2></header>{drafts.length ? <div className="draft-list">{drafts.map((item) => <button key={item.content_item_id} onClick={() => onStart({ item })} type="button"><b>{item.title}</b><small>{strategyFor(item.objective, item.pillar).label}</small></button>)}</div> : <p className="quiet-empty">No hay borradores. Tu próximo brief puede empezar desde la matriz.</p>}</section>
+        <section><header><span className="eyebrow">Continuar</span><h2>Borradores <em>{drafts.length}</em></h2></header>{drafts.length ? <><p className="draft-help">Abre cualquier pieza para editar su texto y brief.</p><div className="draft-list">{drafts.map((item) => <button aria-label={`Editar borrador ${item.title}`} key={item.content_item_id} onClick={() => onStart({ item })} type="button"><span><b>{item.title}</b><small>{strategyFor(item.objective, item.pillar).label}</small></span><span className="draft-edit"><WorkflowIcon name="edit" size={14}/>Editar</span></button>)}</div></> : <p className="quiet-empty">No hay borradores. Tu próximo brief puede empezar desde la matriz.</p>}</section>
       </aside>
     </div>
   );
