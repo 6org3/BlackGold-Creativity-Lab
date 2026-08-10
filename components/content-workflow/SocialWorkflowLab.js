@@ -123,6 +123,28 @@ export default function SocialWorkflowLab() {
     return run(() => api(`/api/system-os/content/items/${item.content_item_id}`, { method: 'PATCH', body: JSON.stringify({ checklist: next, expected_revision: item.revision }) }), 'Checklist actualizado');
   };
   const jobMutate = (jobId, body, success) => run(() => api(`/api/system-os/jobs/${jobId}/actions`, { method: 'POST', body: JSON.stringify(body) }), success);
+  const relaunchJob = async (source, form) => {
+    setBusy(true); setMessage('');
+    try {
+      const created = await api('/api/system-os/jobs', {
+        method: 'POST',
+        body: JSON.stringify({
+          job_type: 'generate_image', content_id: `bg-${Date.now()}`, approved_by: 'jorge',
+          title: form.title.trim(), subtitle: form.subtitle.trim(), prompt: form.prompt.trim(),
+          format: form.format, variants: Number(form.variants), workflow: form.workflow,
+          subject_anchor: form.subjectAnchor, content_type: source.content_type || 'social-image',
+          intent: form.intent.trim() || form.title.trim(), parent_job_id: source.job_id,
+          revision_instruction: `Nueva versión editada desde Creativity Lab a partir de ${source.job_id}`,
+        }),
+      });
+      setMessage(`Nueva versión ${created.job_id} enviada a Atlas · el original se conserva`);
+      await load(false);
+      return created;
+    } catch (error) {
+      setMessage(error.message);
+      throw error;
+    } finally { setBusy(false); }
+  };
   const saveTemplate = (payload) => run(async () => {
     const url = templateInitial ? `/api/system-os/content/templates/${templateInitial.template_id}` : '/api/system-os/content/templates';
     await api(url, { method: templateInitial ? 'PATCH' : 'POST', body: JSON.stringify(payload) });
@@ -146,7 +168,7 @@ export default function SocialWorkflowLab() {
       <section className="workspace"><header className="topbar"><div><span className="eyebrow">{meta.eyebrow}</span><h1>{meta.title}</h1></div><div className="top-actions"><button aria-label="Actualizar workflow" className="icon-button" onClick={() => load(true)} type="button"><WorkflowIcon name="refresh"/></button>{['plan', 'production', 'templates'].includes(view) && <button aria-label={view === 'templates' ? 'Nueva plantilla' : 'Nueva pieza'} className="button-primary" disabled={view !== 'templates' && !activeTemplates.length} onClick={() => view === 'templates' ? openTemplate() : openWizard()} type="button"><WorkflowIcon name="plus" size={18}/><span>{view === 'templates' ? 'Nueva plantilla' : 'Nueva pieza'}</span></button>}</div></header>
         <div className="safety-strip"><WorkflowIcon name="check" size={17}/><span>Planifica, produce y audita. <b>No publica, no envía mensajes y no abre inscripciones.</b></span></div>
         {message && <div className="notice" role="status"><span>{message}</span><button aria-label="Ocultar mensaje" onClick={() => setMessage('')} type="button"><WorkflowIcon name="close" size={16}/></button></div>}
-        <div className="workflow-view">{view === 'plan' && <StrategyPlanner items={items} onSelection={setSelection} onStart={openWizard} selection={selection} templates={activeTemplates}/>} {view === 'production' && <ProductionWorkspace busy={busy} health={health} items={items} jobs={jobs} onAction={itemAction} onChecklist={checklist} onEdit={(item) => openWizard({ item })} onJobMutate={jobMutate} onManageAssets={() => navigate('assets')} templates={templates}/>} {view === 'assets' && <AssetWorkspace items={items} jobs={jobs} onMessage={setMessage}/>} {view === 'templates' && <TemplateWorkspace busy={busy} onAction={templateAction} onEdit={openTemplate} templates={templates}/>} {view === 'archive' && <ArchiveWorkspace busy={busy} items={archived} onRestore={restoreItem}/>}</div>
+        <div className="workflow-view">{view === 'plan' && <StrategyPlanner items={items} onSelection={setSelection} onStart={openWizard} selection={selection} templates={activeTemplates}/>} {view === 'production' && <ProductionWorkspace busy={busy} health={health} items={items} jobs={jobs} onAction={itemAction} onChecklist={checklist} onEdit={(item) => openWizard({ item })} onJobMutate={jobMutate} onManageAssets={() => navigate('assets')} onRelaunch={relaunchJob} templates={templates}/>} {view === 'assets' && <AssetWorkspace items={items} jobs={jobs} onMessage={setMessage}/>} {view === 'templates' && <TemplateWorkspace busy={busy} onAction={templateAction} onEdit={openTemplate} templates={templates}/>} {view === 'archive' && <ArchiveWorkspace busy={busy} items={archived} onRestore={restoreItem}/>}</div>
       </section>
       {wizardOpen && <ContentWizard busy={busy} initial={wizardInitial} onClose={closeWizard} onSave={saveWizard} open templates={templates}/>}
       {templateOpen && <TemplateEditor busy={busy} initial={templateInitial} onClose={closeTemplate} onSave={saveTemplate} open/>}

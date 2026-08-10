@@ -8,6 +8,10 @@ import WorkflowIcon from './WorkflowIcon';
 const { CONTENT_FORMAT_LABELS, FORMAT_LABELS, OBJECTIVES, PILLARS, PLATFORM_LABELS, seedBrief, sortTemplates, strategyFor } = workflow;
 const STEPS = ['Estrategia', 'Plantilla', 'Canales', 'Brief'];
 
+function BriefAssistant({ assets, busy, info, onAssetToggle, onComplete, onReference, onSource, reference, selectedAssets, source }) {
+  return <section className="brief-assistant"><header><span><WorkflowIcon name="spark" size={19}/></span><div><b>Completar brief desde una idea</b><small>Pega un resumen, guion, escaleta o nota atómica. El servidor llena la plantilla para que tú corrijas y supervises.</small></div></header><label className="field field-wide"><span>Idea, guion o contenido de referencia</span><textarea maxLength="8000" onChange={(event) => onSource(event.target.value)} placeholder="Ej. Carrusel que explique que Black Gold no es solo entrenar: el sistema acompaña, mide y organiza el progreso…" rows="5" value={source}/><small className="field-help">No pegues nombres, teléfonos ni datos individuales de atletas o menores.</small></label><label className="field field-wide"><span>Nombre de la referencia · opcional</span><input maxLength="180" onChange={(event) => onReference(event.target.value)} placeholder="Nota atómica · lanzamiento de entrenamientos" value={reference}/></label>{assets.length > 0 && <fieldset className="assist-assets"><legend>Archivos propios para considerar · opcional</legend><div>{assets.map((asset) => <label key={asset.asset_id}><input checked={selectedAssets.includes(asset.asset_id)} onChange={() => onAssetToggle(asset.asset_id)} type="checkbox"/><span><b>{asset.name}</b><small>{asset.kind} · permanece privado</small></span></label>)}</div></fieldset>}<div className="assist-action"><button className="button-secondary" disabled={busy || source.trim().length < 12} onClick={onComplete} type="button"><WorkflowIcon name="spark" size={17}/>{busy ? 'Completando…' : 'Completar toda la plantilla'}</button><small>No consulta PII ni publica. Solo propone un borrador editable.</small></div>{info && <div className="assist-result" role="status"><WorkflowIcon name="check" size={17}/><span><b>Plantilla completada.</b> Contexto {info.mode === 'server_snapshot' ? 'actualizado en el servidor privado' : 'seguro integrado'} · {info.updatedAt ? new Date(info.updatedAt).toLocaleDateString('es') : 'sin fecha'}.</span></div>}</section>;
+}
+
 function initialize(initial, templates) {
   const item = initial?.item;
   const objective = item?.objective || initial?.objective || 'educate';
@@ -36,6 +40,12 @@ export default function ContentWizard({ busy, initial, onClose, onSave, open, te
   const [step, setStep] = useState(initialState.step);
   const [error, setError] = useState('');
   const [form, setForm] = useState(initialState.form);
+  const [source, setSource] = useState('');
+  const [sourceReference, setSourceReference] = useState('');
+  const [assets, setAssets] = useState([]);
+  const [selectedAssets, setSelectedAssets] = useState([]);
+  const [assistBusy, setAssistBusy] = useState(false);
+  const [assistInfo, setAssistInfo] = useState(null);
   const ready = Boolean(form);
   const editing = Boolean(initial?.item);
 
@@ -57,6 +67,16 @@ export default function ContentWizard({ busy, initial, onClose, onSave, open, te
   }, [busy, onClose, open, ready]);
 
   useEffect(() => { if (open) headingRef.current?.focus(); }, [open, step]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    let active = true;
+    fetch('/api/assets', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((payload) => { if (active && payload.ok) setAssets((payload.assets || []).filter((asset) => asset.source === 'upload' && asset.status === 'active').slice(0, 12)); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [open]);
 
   const template = useMemo(
     () => initial?.item?.template_snapshot || templates.find((candidate) => candidate.template_id === form?.templateId),
@@ -83,6 +103,21 @@ export default function ContentWizard({ busy, initial, onClose, onSave, open, te
       ? current.platforms.filter((item) => item !== platform)
       : [...current.platforms, platform],
   }));
+  const toggleAsset = (assetId) => setSelectedAssets((current) => current.includes(assetId) ? current.filter((id) => id !== assetId) : [...current, assetId]);
+  const completeBrief = async () => {
+    setAssistBusy(true); setError(''); setAssistInfo(null);
+    try {
+      const response = await fetch('/api/content-assist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_text: source, source_reference: sourceReference, objective: form.objective, pillar: form.pillar, audience: form.audience, asset_ids: selectedAssets, template: { template_id: template.template_id, name: template.name, content_format: template.content_format, fields: template.fields.map(({ key, label, required }) => ({ key, label, required })) } }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'No se pudo completar el brief.');
+      setForm((current) => ({ ...current, title: payload.title, audience: payload.audience, brief: { ...current.brief, ...payload.brief } }));
+      setAssistInfo({ mode: payload.context_mode, updatedAt: payload.provenance?.context_updated_at });
+    } catch (reason) { setError(reason.message); }
+    finally { setAssistBusy(false); }
+  };
 
   const validate = () => {
     if (step === 2 && !form.platforms.length) return 'Elige al menos una plataforma.';
@@ -127,7 +162,7 @@ export default function ContentWizard({ busy, initial, onClose, onSave, open, te
           {step === 0 && <><div className="field-grid"><label className="field"><span>Objetivo</span><select onChange={(event) => changeStrategy('objective', event.target.value)} value={form.objective}>{OBJECTIVES.map((item) => <option key={item.id} value={item.id}>{item.label} · {item.short}</option>)}</select></label><label className="field"><span>Pilar</span><select onChange={(event) => changeStrategy('pillar', event.target.value)} value={form.pillar}>{PILLARS.map((item) => <option key={item.id} value={item.id}>{item.label} · {item.short}</option>)}</select></label></div><div className="strategy-preview"><span className="eyebrow">{strategy.label}</span><h3>{strategy.promise}</h3><p>{strategy.angle}</p><dl><div><dt>Gancho</dt><dd>{strategy.hook}</dd></div><div><dt>Visual</dt><dd>{strategy.visual}</dd></div><div><dt>CTA sugerido</dt><dd>{strategy.cta}</dd></div></dl></div></>}
           {step === 1 && <div className="wizard-template-list">{ranked.map((candidate, index) => <button aria-pressed={form.templateId === candidate.template_id} className={form.templateId === candidate.template_id ? 'is-selected' : ''} key={candidate.template_id} onClick={() => chooseTemplate(candidate)} type="button"><span>{String(index + 1).padStart(2, '0')}</span><span><b>{candidate.name}</b><small>{candidate.description}</small></span><em>{candidate.execution_mode === 'image_auto' ? 'Render local' : 'Plan y checklist'}</em></button>)}</div>}
           {step === 2 && <><div className="dialog-note"><WorkflowIcon name={template.execution_mode === 'image_auto' ? 'image' : 'film'} size={18}/><span><b>{CONTENT_FORMAT_LABELS[template.content_format] || template.name}.</b> {template.execution_mode === 'image_auto' ? 'System OS puede crear este arte localmente; la entrega queda dentro del Lab y no envía mensajes.' : 'Crea un plan y checklist; no iniciará un render ni contactará servicios externos.'}</span></div><fieldset className="choice-fieldset"><legend>Plataformas</legend><div>{template.platforms.map((platform) => <label key={platform}><input checked={form.platforms.includes(platform)} onChange={() => togglePlatform(platform)} type="checkbox"/><span>{PLATFORM_LABELS[platform]}</span></label>)}</div></fieldset><fieldset className="choice-fieldset"><legend>Relación de aspecto</legend><div>{template.formats.map((format) => <label key={format}><input checked={form.format === format} name="output-format" onChange={() => setForm((current) => ({ ...current, format }))} type="radio"/><span>{FORMAT_LABELS[format]}</span></label>)}</div></fieldset></>}
-          {step === 3 && <div className="brief-form"><div className="field-grid"><label className="field"><span>Título de trabajo</span><input maxLength="120" onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Tres claves para mejorar tu tiro" value={form.title}/></label><label className="field"><span>Audiencia</span><input maxLength="160" onChange={(event) => setForm((current) => ({ ...current, audience: event.target.value }))} value={form.audience}/></label></div><label className="field"><span>Fecha prevista · opcional</span><input onChange={(event) => setForm((current) => ({ ...current, plannedFor: event.target.value }))} type="date" value={form.plannedFor}/></label><BriefFields brief={form.brief} fields={template.fields} onChange={(key, value) => setForm((current) => ({ ...current, brief: { ...current.brief, [key]: value } }))}/><div className="dialog-note"><WorkflowIcon name="check" size={18}/><span>{template.execution_mode === 'image_auto' && !editing ? 'Al crear, se abrirá un trabajo local con entrega desactivada. La publicación seguirá bloqueada.' : 'El plan quedará auditado y podrá avanzar manualmente hasta Listo para programar.'}</span></div></div>}
+          {step === 3 && <div className="brief-form"><BriefAssistant assets={assets} busy={assistBusy} info={assistInfo} onAssetToggle={toggleAsset} onComplete={completeBrief} onReference={setSourceReference} onSource={setSource} reference={sourceReference} selectedAssets={selectedAssets} source={source}/><div className="field-grid"><label className="field"><span>Título de trabajo</span><input maxLength="120" onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Tres claves para mejorar tu tiro" value={form.title}/></label><label className="field"><span>Audiencia</span><input maxLength="160" onChange={(event) => setForm((current) => ({ ...current, audience: event.target.value }))} value={form.audience}/></label></div><label className="field"><span>Fecha prevista · opcional</span><input onChange={(event) => setForm((current) => ({ ...current, plannedFor: event.target.value }))} type="date" value={form.plannedFor}/></label><BriefFields brief={form.brief} fields={template.fields} onChange={(key, value) => setForm((current) => ({ ...current, brief: { ...current.brief, [key]: value } }))}/><div className="dialog-note"><WorkflowIcon name="check" size={18}/><span>{template.execution_mode === 'image_auto' && !editing ? 'Al crear, se abrirá un trabajo local con entrega desactivada. La publicación seguirá bloqueada.' : 'El plan quedará auditado y podrá avanzar manualmente hasta Listo para programar.'}</span></div></div>}
         </div>
         <footer className="wizard-footer"><div>{step > 0 && !editing && <button className="button-secondary" disabled={busy} onClick={() => { setError(''); setStep((current) => current - 1); }} type="button"><WorkflowIcon name="back" size={17}/>Anterior</button>}</div><div>{!editing && step === 3 && <button className="button-secondary" disabled={busy} onClick={() => submit('draft')} type="button">Guardar borrador</button>}{step < 3 && !editing ? <button className="button-primary" onClick={next} type="button">Continuar<WorkflowIcon name="chevron" size={17}/></button> : <button className="button-primary" disabled={busy} onClick={() => submit(editing ? 'update' : template.execution_mode === 'image_auto' ? 'render' : 'plan')} type="button"><WorkflowIcon name="check" size={18}/>{busy ? 'Guardando…' : editing ? 'Guardar cambios' : template.execution_mode === 'image_auto' ? 'Crear y enviar a producción' : 'Crear plan'}</button>}</div></footer>
       </section>

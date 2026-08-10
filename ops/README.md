@@ -4,6 +4,7 @@
 
 - El servidor ejecuta la interfaz, la cola y el archivista.
 - El PC Windows conserva ComfyUI y la RTX 4060 como nodo de render.
+- Windows no ejecuta Linux, WSL ni Docker para este flujo: Atlas consume trabajos con scripts nativos y devuelve los renders.
 - Telegram y Creativity Lab operan sobre la misma cola de System OS.
 - Google Drive recibe copias verificadas. El archivista nunca usa `sync` ni elimina archivos locales.
 - `CREATIVITY_LAB_PUBLIC_URL` fija el origen público usado por login y logout;
@@ -39,5 +40,18 @@ La cuota predeterminada es 10 GB y el Lab reserva al menos 1 GB libre. Se pueden
 - `POST /api/assets` con `multipart/form-data`: recibe `files`, `content_item_id` y `note`; responde `201` o `400/413/415/507`.
 - `POST /api/assets` con JSON: registra la decisión sobre un artefacto generado; `status` admite `active` o `discarded`.
 - `PATCH /api/assets/:assetId`: actualiza `status`, `content_item_id` o `note`; la descarga usa `GET /api/assets/:assetId/file`.
+
+## Contexto editorial privado
+
+El Vault completo y el CRM nunca se montan en el contenedor web. Shaka prepara en el servidor un snapshot saneado, sin PII, con solo hechos aprobados, tono, límites y señales agregadas. Creativity Lab lo monta en modo de solo lectura desde `/mnt/datos/creativity-lab/knowledge/creative-context.json`; si falta o está dañado, usa el contexto seguro integrado y lo informa en la interfaz.
+
+Antes del despliegue inicial:
+
+```bash
+sudo install -d -o 1000 -g 1000 -m 0750 /mnt/datos/creativity-lab/knowledge
+sudo install -o 1000 -g 1000 -m 0640 lib/creative-context-default.json /mnt/datos/creativity-lab/knowledge/creative-context.json
+```
+
+El heartbeat de Shaka debe regenerar el archivo desde Knowledge Vault, Atlas, Pitágoras y Lily cada 15 minutos, escribiendo primero un temporal y renombrándolo al final. Solo admite señales agregadas del CRM y referencias internas a archivos; nunca nombres, teléfonos, historiales individuales ni URLs públicas de fotos de menores.
 
 Todas estas rutas requieren la sesión del Lab. Los errores mantienen el formato `{ "ok": false, "error": "…" }`.
