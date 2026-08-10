@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "updated_at": "2026-08-10T00:00:00-05:00",
+  "campaign": {
+    "name": "Lanzamiento entrenamientos + plataforma Black Gold",
+    "core_message": "No vienes solo a entrenar. Entras a un sistema para avanzar.",
+    "slogan": "ENTRENA. MIDE. AVANZA.",
+    "system_role": "La plataforma organiza el flujo de atención, seguimiento y próximos pasos alrededor del club."
+  },
+  "voice": [
+    "Directo, disciplinado, humano y premium.",
+    "Frases claras y concretas; sin exageraciones ni promesas vacías.",
+    "Explicar el método con evidencia observable y un siguiente paso manual."
+  ],
+  "approved_facts": [
+    "Black Gold trabaja técnica, disciplina y progreso como partes del mismo proceso.",
+    "El entrenamiento y la plataforma forman un sistema coordinado de seguimiento.",
+    "La disponibilidad, horarios, precios e inscripción siempre se confirman por una persona."
+  ],
+  "guardrails": [
+    "No prometer cupos, inscripción automática, resultados garantizados, precios ni horarios no confirmados.",
+    "No incluir nombres, teléfonos, datos individuales del CRM ni información identificable de menores.",
+    "Usar fotografías internas solo cuando el permiso esté confirmado y mantenerlas dentro del servidor privado.",
+    "La llamada a la acción conduce a una conversación o revisión humana; nunca publica ni inscribe automáticamente."
+  ],
+  "sources": [
+    "Black Gold Knowledge Vault · estrategia editorial aprobada",
+    "Shaka · contexto de marca y campaña",
+    "Lily CRM · señales agregadas sin PII",
+    "Atlas · reglas de producción y render",
+    "Pitágoras · criterios de método y progreso"
+  ]
+}

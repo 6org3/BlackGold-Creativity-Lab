@@ -10,12 +10,14 @@ services:
       CREATIVITY_LAB_PUBLIC_URL: https://lab.blackgoldec.com
       CREATIVITY_ASSET_QUOTA_BYTES: ${CREATIVITY_ASSET_QUOTA_BYTES:-10737418240}
       CREATIVITY_ASSET_MIN_FREE_BYTES: ${CREATIVITY_ASSET_MIN_FREE_BYTES:-1073741824}
+      CREATIVITY_CONTEXT_PATH: /knowledge/creative-context.json
     ports:
       - "192.168.1.13:8791:3000"
     volumes:
       - /mnt/datos/content-worker:/content:ro
       - /mnt/datos/creativity-lab/rclone:/rclone:ro
       - /mnt/datos/creativity-lab/assets:/asset-store
+      - /mnt/datos/creativity-lab/knowledge:/knowledge:ro
     networks:
       - n8n
     healthcheck:
