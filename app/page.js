@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import CreativityLab from '../components/CreativityLab';
 
 export default function Home() {
-  redirect('/studio');
+  return <CreativityLab />;
 }

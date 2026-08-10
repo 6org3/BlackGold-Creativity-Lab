@@ -1,28 +1,28 @@
-FROM node:20-alpine AS base
+FROM node:22.23.2-alpine3.23 AS base
 WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Install dependencies
 FROM base AS deps
-COPY package*.json ./
+COPY package.json package-lock.json ./
 COPY packages/Vibe-Workflow/packages/workflow-builder/package*.json ./packages/Vibe-Workflow/packages/workflow-builder/
 COPY packages/Open-Poe-AI/packages/agents/package*.json ./packages/Open-Poe-AI/packages/agents/
 COPY packages/Open-AI-Design-Agent/packages/design-agent/package*.json ./packages/Open-AI-Design-Agent/packages/design-agent/
 COPY packages/studio/package*.json ./packages/studio/
-RUN npm install
+RUN npm ci --ignore-scripts
 
-# Build sub-packages
 FROM deps AS builder
 COPY . .
 RUN npm run build:packages
 RUN npm run build
 
-# Production runner
 FROM base AS runner
 ENV NODE_ENV=production
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+COPY --from=builder --chown=node:node /app/.next ./.next
+COPY --from=builder --chown=node:node /app/public ./public
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package.json ./package.json
+USER node
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["./node_modules/.bin/next", "start"]
