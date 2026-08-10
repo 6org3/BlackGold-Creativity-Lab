@@ -34,6 +34,7 @@ function Icon({ name, size = 20 }) {
     check: <path d="m5 12 4 4L19 6"/>,
     close: <path d="m6 6 12 12M18 6 6 18"/>,
     chevron: <path d="m9 18 6-6-6-6"/>,
+    logout: <><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></>,
     spark: <path d="m12 3 1.3 4.2a5 5 0 0 0 3.3 3.3L21 12l-4.4 1.5a5 5 0 0 0-3.3 3.3L12 21l-1.3-4.2a5 5 0 0 0-3.3-3.3L3 12l4.4-1.5a5 5 0 0 0 3.3-3.3Z"/>,
   };
   return <svg aria-hidden="true" fill="none" height={size} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24" width={size}>{paths[name]}</svg>;
@@ -195,7 +196,7 @@ export default function CreativityLab() {
       <aside className="sidebar">
         <div className="brand-lockup"><div className="brand-mark"><BrandMark/></div><span><b>BLACK GOLD</b><small>Creativity Lab</small></span></div>
         <nav aria-label="Navegación principal"><a aria-current="page" className="nav-item is-active" href="#lab"><Icon name="lab"/><span>Laboratorio</span></a><a className="nav-item" href="#production"><Icon name="queue"/><span>Producción</span><em>{running + review}</em></a><a className="nav-item" href="#archive"><Icon name="archive"/><span>Archivo</span></a></nav>
-        <div className="sidebar-foot"><span>Proveedor local</span><b>ComfyUI · RTX 4060</b><small>Premium desactivado</small><form action="/api/auth/logout" method="post"><button className="logout-button" type="submit">Cerrar sesión</button></form></div>
+        <div className="sidebar-foot"><span>Proveedor local</span><b>ComfyUI · RTX 4060</b><small>Premium desactivado</small><form action="/api/auth/logout" method="post"><button aria-label="Cerrar sesión" className="logout-button" type="submit"><Icon name="logout" size={18}/><span>Cerrar sesión</span></button></form></div>
       </aside>
 
       <section className="workspace">
