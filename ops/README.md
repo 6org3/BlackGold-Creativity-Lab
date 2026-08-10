@@ -6,6 +6,8 @@
 - El PC Windows conserva ComfyUI y la RTX 4060 como nodo de render.
 - Telegram y Creativity Lab operan sobre la misma cola de System OS.
 - Google Drive recibe copias verificadas. El archivista nunca usa `sync` ni elimina archivos locales.
+- `CREATIVITY_LAB_PUBLIC_URL` fija el origen público usado por login y logout;
+  en el despliegue actual debe ser `https://lab.blackgoldec.com`.
 
 ## Google Drive
 

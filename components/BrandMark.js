@@ -1,28 +1,26 @@
-export default function BrandMark({ className = '', label = 'Black Gold' }) {
+export default function BrandMark({ className = '', label = 'Black Gold Intelligence' }) {
   return (
     <svg
-      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      aria-label={label || undefined}
       className={className}
-      role="img"
-      viewBox="40 14 140 170"
+      fill="none"
+      role={label ? 'img' : undefined}
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2.25"
+      viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>{label}</title>
+      {label ? <title>{label}</title> : null}
       <path
-        d="M58 22 44 54l3 38 11 26 16 28 22 22 14 10 14-10 22-22 16-28 11-26 3-38-14-32-32 30-20 12-20-12Z"
-        fill="currentColor"
+        d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0l1.58 6.14a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96l-6.14 1.58a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0Z"
       />
-      <path d="m110 66-18 18 6 2 12-12 12 12 6-2Z" fill="#09090b" />
-      <path d="m56 90 39 10-7 11-30-10Zm108 0-39 10 7 11 30-10Zm-62 28h16l-8 12Z" fill="#09090b" />
-      <path d="M97 140q17 3 32-9" fill="none" stroke="#09090b" strokeLinecap="round" strokeWidth="3.2" />
-      <g fill="none" opacity=".42" stroke="#09090b" strokeWidth="1.8">
-        <circle cx="74" cy="126" r="5.5" />
-        <circle cx="146" cy="126" r="5.5" />
-      </g>
-      <g fill="#09090b" opacity=".42">
-        <circle cx="74" cy="126" r="1.3" />
-        <circle cx="146" cy="126" r="1.3" />
-      </g>
+      <path d="M20 3v4" />
+      <path d="M22 5h-4" />
+      <path d="M4 17v2" />
+      <path d="M5 18H3" />
     </svg>
   );
 }

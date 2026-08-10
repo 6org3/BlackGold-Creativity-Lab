@@ -6,6 +6,8 @@ services:
     container_name: blackgold-creativity-lab
     restart: unless-stopped
     env_file: .env
+    environment:
+      CREATIVITY_LAB_PUBLIC_URL: https://lab.blackgoldec.com
     ports:
       - "192.168.1.13:8791:3000"
     volumes:

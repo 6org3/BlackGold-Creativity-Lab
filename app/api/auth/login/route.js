@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { createSessionToken, SESSION_COOKIE, SESSION_TTL_SECONDS } from '@/lib/session';
+import { publicLocation } from '@/lib/public-url';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +12,7 @@ function constantTimeEqual(received, expected, secret) {
 }
 
 function loginRedirect(request, error) {
-  const url = new URL('/login', request.url);
+  const url = publicLocation('/login', request);
   url.searchParams.set('error', error);
   return NextResponse.redirect(url, 303);
 }
@@ -35,7 +36,7 @@ export async function POST(request) {
     return loginRedirect(request, 'credentials');
   }
 
-  const response = NextResponse.redirect(new URL('/', request.url), 303);
+  const response = NextResponse.redirect(publicLocation('/', request), 303);
   const forwardedProtocol = request.headers.get('x-forwarded-proto');
   response.cookies.set(SESSION_COOKIE, await createSessionToken(sessionSecret), {
     httpOnly: true,
