@@ -14,7 +14,7 @@ services:
     networks:
       - n8n
     healthcheck:
-      test: ["CMD", "node", "-e", "const auth=Buffer.from(process.env.CREATIVITY_LAB_USER+':'+process.env.CREATIVITY_LAB_PASSWORD).toString('base64');fetch('http://127.0.0.1:3000/api/system-os/health',{headers:{authorization:'Basic '+auth}}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "const body=new URLSearchParams({user:process.env.CREATIVITY_LAB_USER,password:process.env.CREATIVITY_LAB_PASSWORD});fetch('http://127.0.0.1:3000/api/auth/login',{method:'POST',body,redirect:'manual'}).then(r=>{const cookie=r.headers.get('set-cookie')?.split(';')[0];if(!cookie)throw Error('login failed');return fetch('http://127.0.0.1:3000/api/system-os/health',{headers:{cookie}})}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 8s
       retries: 3

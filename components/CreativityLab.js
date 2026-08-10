@@ -195,7 +195,7 @@ export default function CreativityLab() {
       <aside className="sidebar">
         <div className="brand-lockup"><div className="brand-mark"><BrandMark/></div><span><b>BLACK GOLD</b><small>Creativity Lab</small></span></div>
         <nav aria-label="Navegación principal"><a aria-current="page" className="nav-item is-active" href="#lab"><Icon name="lab"/><span>Laboratorio</span></a><a className="nav-item" href="#production"><Icon name="queue"/><span>Producción</span><em>{running + review}</em></a><a className="nav-item" href="#archive"><Icon name="archive"/><span>Archivo</span></a></nav>
-        <div className="sidebar-foot"><span>Proveedor local</span><b>ComfyUI · RTX 4060</b><small>Premium desactivado</small></div>
+        <div className="sidebar-foot"><span>Proveedor local</span><b>ComfyUI · RTX 4060</b><small>Premium desactivado</small><form action="/api/auth/logout" method="post"><button className="logout-button" type="submit">Cerrar sesión</button></form></div>
       </aside>
 
       <section className="workspace">

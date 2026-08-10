@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { SESSION_COOKIE, verifySessionToken } from './lib/session';
 
 const LEGACY_MUAPI_PATHS = [
   '/studio',
@@ -12,6 +13,8 @@ const LEGACY_MUAPI_PATHS = [
   '/api/workflow',
 ];
 
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/logout', '/icon.svg'];
+
 function secure(response) {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
@@ -24,24 +27,46 @@ function secure(response) {
   return response;
 }
 
-function unauthorized() {
-  const response = new NextResponse('Autenticación requerida', { status: 401 });
-  response.headers.set('WWW-Authenticate', 'Basic realm="BlackGold Creativity Lab", charset="UTF-8"');
-  return secure(response);
+function isPublic(pathname) {
+  return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
-export function proxy(request) {
-  const user = process.env.CREATIVITY_LAB_USER;
-  const password = process.env.CREATIVITY_LAB_PASSWORD;
-  if (user && password) {
-    const expected = `Basic ${btoa(`${user}:${password}`)}`;
-    if (request.headers.get('authorization') !== expected) {
-      return unauthorized();
+function unauthenticated(request) {
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return secure(
+      NextResponse.json(
+        { ok: false, error: 'authentication_required', message: 'Inicia sesión en Creativity Lab.' },
+        { status: 401 },
+      ),
+    );
+  }
+
+  const loginUrl = new URL('/login', request.url);
+  return secure(NextResponse.redirect(loginUrl));
+}
+
+export async function proxy(request) {
+  const pathname = request.nextUrl.pathname;
+  const sessionSecret = process.env.CREATIVITY_LAB_SESSION_SECRET;
+
+  if (!sessionSecret || sessionSecret.length < 32) {
+    return secure(
+      NextResponse.json(
+        { ok: false, error: 'session_not_configured', message: 'Falta configurar la sesión segura.' },
+        { status: 503 },
+      ),
+    );
+  }
+
+  if (!isPublic(pathname)) {
+    const token = request.cookies.get(SESSION_COOKIE)?.value;
+    if (!(await verifySessionToken(token, sessionSecret))) {
+      return unauthenticated(request);
     }
   }
 
-  const legacyMuApi = LEGACY_MUAPI_PATHS.some((path) =>
-    request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(`${path}/`),
+  const legacyMuApi = LEGACY_MUAPI_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
   if (legacyMuApi && process.env.ENABLE_MUAPI !== 'true') {
     return secure(
