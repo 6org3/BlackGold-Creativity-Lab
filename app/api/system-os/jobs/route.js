@@ -13,7 +13,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const body = { ...(await request.json()), delivery_mode: 'none', publish_allowed: false };
     return Response.json(
       await systemOSFetch('/jobs', { method: 'POST', body: JSON.stringify(body) }),
       { status: 202 },

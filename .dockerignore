@@ -6,5 +6,6 @@ release
 dist
 npm-debug.log*
 .env
+.env*
 ops/.env
 **/__pycache__
