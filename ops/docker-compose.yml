@@ -21,7 +21,7 @@ services:
       start_period: 35s
 
   drive-archivist:
-    image: rclone/rclone:1.74.4
+    image: rclone/rclone:1.75.0
     container_name: blackgold-drive-archivist
     restart: unless-stopped
     env_file: .env
